@@ -1,5 +1,8 @@
 package com.bank.cards.card;
 
+import com.bank.cards.client.ClientCardsReportDto;
+import com.bank.cards.client.ClientNotFoundException;
+import com.bank.cards.client.ClientRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -10,10 +13,12 @@ public class CardService {
 
     private final CardRepository cardRepository;
     private final CardMapper cardMapper;
+    private final ClientRepository clientRepository;
 
-    public CardService(CardRepository cardRepository, CardMapper cardMapper) {
+    public CardService(CardRepository cardRepository, CardMapper cardMapper, ClientRepository clientRepository) {
         this.cardRepository = cardRepository;
         this.cardMapper = cardMapper;
+        this.clientRepository = clientRepository;
     }
 
     public CardDto getCard(long id) {
@@ -33,8 +38,33 @@ public class CardService {
         return cardMapper.toDtoList(cards);
     }
 
+    public CardDetailsDto getCardDetails(long id) {
+        Card card = cardRepository.findById(id)
+                .orElseThrow(() -> new CardNotFoundException(id));
+        var client = clientRepository.findById(card.getClientId())
+                .orElseThrow(() -> new CardNotFoundException(id));
+        return cardMapper.toDetailsDto(card, client);
+    }
+
     public List<CardDto> getAllCards() {
         return cardMapper.toDtoList(cardRepository.findAllByOrderByCreatedAtDescIdDesc());
+    }
+
+    public CardListItemDto getCardSummary(long id) {
+        Card card = cardRepository.findById(id)
+                .orElseThrow(() -> new CardNotFoundException(id));
+        return cardMapper.toListItemDto(card);
+    }
+
+    public ClientCardsReportDto getCardsReport(long clientId) {
+        var client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new ClientNotFoundException(clientId));
+        List<CardListItemDto> cards = cardMapper.toListItemDtoList(
+                cardRepository.findByClientIdOrderByIdAsc(clientId));
+        int totalActive = (int) cards.stream()
+                .filter(card -> card.getStatus() == CardStatus.ACTIVE)
+                .count();
+        return new ClientCardsReportDto(clientId, client.getFullName(), cards, totalActive);
     }
 
     public CardDto createCard(CreateCardRequest request) {

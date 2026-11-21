@@ -1,5 +1,6 @@
 package com.bank.cards.card;
 
+import com.bank.cards.client.ClientCardsReportDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,6 +37,21 @@ public class CardController {
     public List<CardDto> getClientCards(@PathVariable long clientId,
                                         @RequestParam(required = false) CardStatus status) {
         return cardService.getCardsByClient(clientId, status);
+    }
+
+    @GetMapping("/api/cards/{id}/details")
+    public CardDetailsDto getCardDetails(@PathVariable long id) {
+        return cardService.getCardDetails(id);
+    }
+
+    @GetMapping("/api/cards/{id}/summary")
+    public CardListItemDto getCardSummary(@PathVariable long id) {
+        return cardService.getCardSummary(id);
+    }
+
+    @GetMapping("/api/clients/{clientId}/cards-report")
+    public ClientCardsReportDto getClientCardsReport(@PathVariable long clientId) {
+        return cardService.getCardsReport(clientId);
     }
 
     @PostMapping("/api/cards")
